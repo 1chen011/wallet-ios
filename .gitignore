@@ -1,0 +1,22 @@
+# Xcode user-specific settings
+*.xcuserstate
+xcuserdata/
+
+# Build output
+build/
+DerivedData/
+*.ipa
+*.dSYM
+*.dSYM.zip
+
+# Swift Package Manager
+.build/
+.swiftpm/xcode/package.xcworkspace/xcuserdata/
+
+# macOS
+.DS_Store
+.AppleDouble
+
+# Temporary files
+*.swp
+*~
