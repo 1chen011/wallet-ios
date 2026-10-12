@@ -1,21 +1,31 @@
-//
-//  ContentView.swift
-//  Wallet
-//
-//  Created by Yinlee57 on 2026/10/11.
-//
-
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 24) {
+                Text("Welcome to Wallet")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+
+                Text("Track your spending. Plan your future.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Button {
+                    print("Add Expense tapped")
+                } label: {
+                    Label("Add Expense", systemImage: "plus")
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .padding()
+            .navigationTitle("Wallet")
         }
-        .padding()
     }
 }
 
