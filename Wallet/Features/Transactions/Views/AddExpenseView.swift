@@ -8,8 +8,9 @@ struct AddExpenseView: View {
     let onSave: (Transaction) -> Void
 
     @State private var amount = ""
-    @State private var selectedCategoryId = "food"
+    @State private var selectedCategoryId: String? = nil
     @State private var selectedDate = Date()
+    @State private var showingAllCategories = false
 
     private var parsedAmount: Int64? {
         let normalized = amount
@@ -36,7 +37,9 @@ struct AddExpenseView: View {
 
         if parts.count == 2 {
             let digits = String(parts[1])
-            let padded = digits.count == 1 ? digits + "0" : digits
+            let padded = digits.count == 1
+                ? digits + "0"
+                : digits
 
             guard let value = Int64(padded) else {
                 return nil
@@ -64,6 +67,10 @@ struct AddExpenseView: View {
         return total
     }
 
+    private var canSave: Bool {
+        parsedAmount != nil && selectedCategoryId != nil
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -80,10 +87,6 @@ struct AddExpenseView: View {
             .background(WalletTheme.background(colorScheme))
             .navigationTitle("Add Expense")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(
-                WalletTheme.background(colorScheme),
-                for: .navigationBar
-            )
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -97,9 +100,16 @@ struct AddExpenseView: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 saveButton
             }
+            .sheet(isPresented: $showingAllCategories) {
+                CategorySelectionView(
+                    selectedCategoryId: $selectedCategoryId
+                )
+            }
         }
-        .tint(WalletTheme.gold)
+        .tint(WalletTheme.navy)
     }
+
+    // MARK: - Amount
 
     private var amountSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -112,7 +122,10 @@ struct AddExpenseView: View {
                         WalletTheme.secondaryText(colorScheme)
                     )
 
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                HStack(
+                    alignment: .firstTextBaseline,
+                    spacing: 10
+                ) {
                     Text("CA$")
                         .font(.system(size: 22, weight: .medium))
                         .foregroundStyle(WalletTheme.gold)
@@ -127,7 +140,9 @@ struct AddExpenseView: View {
                         .foregroundStyle(
                             WalletTheme.primaryText(colorScheme)
                         )
-                        .accessibilityIdentifier("expenseAmountField")
+                        .accessibilityIdentifier(
+                            "expenseAmountField"
+                        )
                 }
             }
             .padding(20)
@@ -140,41 +155,124 @@ struct AddExpenseView: View {
             )
         }
     }
+
+    // MARK: - Category
 
     private var categorySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionTitle("CATEGORY")
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                sectionTitle("CATEGORY")
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Choose a category")
-                    .font(.subheadline)
-                    .foregroundStyle(
-                        WalletTheme.secondaryText(colorScheme)
-                    )
+                Spacer()
 
-                Picker(
-                    "Category",
-                    selection: $selectedCategoryId
-                ) {
-                    ForEach(ExpenseCategory.presets) { category in
-                        Text(category.name)
-                            .tag(category.id)
+                Button {
+                    showingAllCategories = true
+                } label: {
+                    HStack(spacing: 5) {
+                        Text("Search All")
+
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .bold))
                     }
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(WalletTheme.navy)
                 }
-                .pickerStyle(.menu)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityIdentifier("expenseCategoryPicker")
+                .accessibilityIdentifier("searchAllCategories")
             }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                WalletTheme.surface(colorScheme),
-                in: RoundedRectangle(
-                    cornerRadius: WalletTheme.cornerRadius
+
+            LazyVGrid(
+                columns: Array(
+                    repeating: GridItem(.flexible(), spacing: 9),
+                    count: 4
+                ),
+                spacing: 10
+            ) {
+                ForEach(
+                    ExpenseCategory.quickCategories
+                ) { category in
+                    categoryButton(category)
+                }
+            }
+
+            if let selectedCategoryId,
+               let selected = ExpenseCategory.category(
+                    for: selectedCategoryId
+               ),
+               !ExpenseCategory.quickCategoryIds.contains(
+                    selectedCategoryId
+               ) {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(WalletTheme.navy)
+
+                    Text("Selected: \(selected.name)")
+                        .font(.subheadline)
+                        .foregroundStyle(
+                            WalletTheme.primaryText(colorScheme)
+                        )
+
+                    Spacer()
+                }
+                .padding(13)
+                .background(
+                    WalletTheme.surface(colorScheme),
+                    in: RoundedRectangle(cornerRadius: 14)
                 )
-            )
+            }
         }
     }
+
+    private func categoryButton(
+        _ category: ExpenseCategory
+    ) -> some View {
+        let isSelected = selectedCategoryId == category.id
+
+        return Button {
+            selectedCategoryId = category.id
+        } label: {
+            VStack(spacing: 9) {
+                Image(systemName: category.iconName)
+                    .font(.system(size: 21, weight: .medium))
+                    .foregroundStyle(WalletTheme.navy)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 54)
+                    .background(
+                        category.color,
+                        in: RoundedRectangle(cornerRadius: 16)
+                    )
+
+                Text(category.name)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(
+                        WalletTheme.primaryText(colorScheme)
+                    )
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            .padding(7)
+            .frame(maxWidth: .infinity)
+            .background(
+                isSelected
+                    ? WalletTheme.gold.opacity(0.22)
+                    : WalletTheme.surface(colorScheme),
+                in: RoundedRectangle(cornerRadius: 18)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 18)
+                    .strokeBorder(
+                        isSelected ? WalletTheme.gold : .clear,
+                        lineWidth: 2
+                    )
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(category.name)
+        .accessibilityAddTraits(
+            isSelected ? .isSelected : []
+        )
+    }
+
+    // MARK: - Date
 
     private var dateSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -200,6 +298,8 @@ struct AddExpenseView: View {
         }
     }
 
+    // MARK: - Save
+
     private var saveButton: some View {
         Button {
             saveExpense()
@@ -210,13 +310,13 @@ struct AddExpenseView: View {
                 .padding(.vertical, 17)
                 .foregroundStyle(WalletTheme.navy)
                 .background(
-                    parsedAmount == nil
-                        ? WalletTheme.gold.opacity(0.4)
-                        : WalletTheme.gold,
+                    canSave
+                        ? WalletTheme.gold
+                        : WalletTheme.gold.opacity(0.4),
                     in: RoundedRectangle(cornerRadius: 17)
                 )
         }
-        .disabled(parsedAmount == nil)
+        .disabled(!canSave)
         .accessibilityIdentifier("saveExpenseButton")
         .padding(.horizontal, WalletTheme.horizontalPadding)
         .padding(.top, 12)
@@ -234,13 +334,14 @@ struct AddExpenseView: View {
     }
 
     private func saveExpense() {
-        guard let amountInMinorUnits = parsedAmount else {
+        guard let amountInMinorUnits = parsedAmount,
+              let categoryId = selectedCategoryId else {
             return
         }
 
         let transaction = Transaction(
             amountInMinorUnits: amountInMinorUnits,
-            categoryId: selectedCategoryId,
+            categoryId: categoryId,
             date: selectedDate
         )
 
