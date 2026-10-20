@@ -1,130 +1,50 @@
-
 import SwiftUI
+import SwiftData
 
 struct CategorySelectionView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
-
+    @Environment(\.colorScheme) private var scheme
     @Binding var selectedCategoryId: String?
-
+    @Query(sort: \StoredCategory.sortOrder) private var categories: [StoredCategory]
     @State private var searchText = ""
+    @State private var showingCreate = false
 
-    private var filteredCategories: [ExpenseCategory] {
-        guard !searchText.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        ).isEmpty else {
-            return ExpenseCategory.presets
-        }
-
-        return ExpenseCategory.presets.filter {
-            $0.name.localizedStandardContains(searchText)
-        }
+    private var filtered: [StoredCategory] {
+        categories.filter { !$0.isArchived && (searchText.isEmpty || $0.name.localizedStandardContains(searchText)) }
     }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: 10) {
-                    if filteredCategories.isEmpty {
-                        ContentUnavailableView.search(
-                            text: searchText
-                        )
-                    } else {
-                        ForEach(filteredCategories) { category in
-                            categoryRow(category)
+            List {
+                ForEach(filtered) { category in
+                    Button {
+                        selectedCategoryId = category.id
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: category.iconName)
+                                .foregroundStyle(WalletTheme.navy)
+                                .frame(width: 42, height: 42)
+                                .background(category.color, in: RoundedRectangle(cornerRadius: 13))
+                            Text(category.name).foregroundStyle(WalletTheme.primaryText(scheme))
+                            Spacer()
+                            if selectedCategoryId == category.id { Image(systemName: "checkmark.circle.fill") }
                         }
                     }
                 }
-                .padding(.horizontal, WalletTheme.horizontalPadding)
-                .padding(.vertical, 16)
+                if filtered.isEmpty { ContentUnavailableView.search(text: searchText) }
+                Section { Button { showingCreate = true } label: { Label("Create Category", systemImage: "plus.circle") } }
             }
-            .background(WalletTheme.background(colorScheme))
+            .scrollContentBackground(.hidden)
+            .background(WalletTheme.background(scheme))
             .navigationTitle("Categories")
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(
-                text: $searchText,
-                prompt: "Search categories"
-            )
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .foregroundStyle(
-                        WalletTheme.primaryText(colorScheme)
-                    )
-                }
+            .searchable(text: $searchText, prompt: "Search categories")
+            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
+            .sheet(isPresented: $showingCreate) {
+                CreateCategoryView { id in selectedCategoryId = id; dismiss() }
             }
         }
         .tint(WalletTheme.navy)
     }
-
-    private func categoryRow(
-        _ category: ExpenseCategory
-    ) -> some View {
-        let isSelected = selectedCategoryId == category.id
-
-        return Button {
-            selectedCategoryId = category.id
-            dismiss()
-        } label: {
-            HStack(spacing: 14) {
-                Image(systemName: category.iconName)
-                    .font(.system(size: 19, weight: .medium))
-                    .foregroundStyle(WalletTheme.navy)
-                    .frame(width: 48, height: 48)
-                    .background(
-                        category.color,
-                        in: RoundedRectangle(cornerRadius: 15)
-                    )
-
-                Text(category.name)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(
-                        WalletTheme.primaryText(colorScheme)
-                    )
-
-                Spacer()
-
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 21))
-                        .foregroundStyle(WalletTheme.navy)
-                } else {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(
-                            WalletTheme.secondaryText(colorScheme)
-                        )
-                }
-            }
-            .padding(13)
-            .background(
-                WalletTheme.surface(colorScheme),
-                in: RoundedRectangle(
-                    cornerRadius: WalletTheme.cornerRadius
-                )
-            )
-            .overlay {
-                RoundedRectangle(
-                    cornerRadius: WalletTheme.cornerRadius
-                )
-                .strokeBorder(
-                    isSelected ? WalletTheme.gold : .clear,
-                    lineWidth: 2
-                )
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
 }
-
-#Preview {
-    @Previewable @State var selectedCategoryId: String? = "food"
-
-    CategorySelectionView(
-        selectedCategoryId: $selectedCategoryId
-    )
-}
-

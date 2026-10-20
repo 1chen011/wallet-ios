@@ -10,6 +10,7 @@ struct HomeView: View {
     private var storedTransactions: [StoredTransaction]
 
     @State private var showingAddExpense = false
+    @State private var showingCategoryManagement = false
     @State private var showingSaveError = false
 
     private var transactions: [Transaction] {
@@ -51,6 +52,9 @@ struct HomeView: View {
                 addExpenseButton
             }
             .toolbar(.hidden, for: .navigationBar)
+            .sheet(isPresented: $showingCategoryManagement) {
+                NavigationStack { CategoryManagementView() }
+            }
             .sheet(isPresented: $showingAddExpense) {
                 AddExpenseView { transaction in
                     saveTransaction(transaction)
@@ -93,7 +97,8 @@ struct HomeView: View {
 
             Spacer()
 
-            Image(systemName: "wallet.bifold.fill")
+            Button { showingCategoryManagement = true } label: {
+                Image(systemName: "square.grid.2x2.fill")
                 .font(.system(size: 20))
                 .foregroundStyle(WalletTheme.gold)
                 .frame(width: 48, height: 48)
@@ -101,7 +106,8 @@ struct HomeView: View {
                     WalletTheme.navy,
                     in: RoundedRectangle(cornerRadius: 16)
                 )
-                .accessibilityHidden(true)
+                .accessibilityLabel("Manage Categories")
+            }
         }
     }
 
@@ -312,7 +318,7 @@ struct HomeView: View {
 #Preview {
     HomeView()
         .modelContainer(
-            for: StoredTransaction.self,
+            for: [StoredTransaction.self, StoredCategory.self],
             inMemory: true
         )
 }
