@@ -1,20 +1,27 @@
 
 import SwiftUI
+import SwiftData
 
 struct HomeView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.modelContext) private var modelContext
+
+    @Query(sort: \StoredTransaction.date, order: .reverse)
+    private var storedTransactions: [StoredTransaction]
 
     @State private var showingAddExpense = false
-    @State private var transactions: [Transaction] = []
+    @State private var showingSaveError = false
 
-    private var sortedTransactions: [Transaction] {
-        transactions.sorted { $0.date > $1.date }
+    private var transactions: [Transaction] {
+        storedTransactions.map { $0.transaction }
     }
 
     private var totalSpent: Int64 {
         transactions
             .filter { $0.type == .expense }
-            .reduce(Int64(0)) { $0 + $1.amountInMinorUnits }
+            .reduce(Int64(0)) {
+                $0 + $1.amountInMinorUnits
+            }
     }
 
     private var formattedTotal: String {
@@ -27,38 +34,53 @@ struct HomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     header
-
                     summaryCard
-
                     transactionsSection
                 }
-                .padding(.horizontal, WalletTheme.horizontalPadding)
+                .padding(
+                    .horizontal,
+                    WalletTheme.horizontalPadding
+                )
                 .padding(.top, 28)
                 .padding(.bottom, 30)
             }
-            .background(WalletTheme.background(colorScheme))
+            .background(
+                WalletTheme.background(colorScheme)
+            )
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 addExpenseButton
             }
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showingAddExpense) {
                 AddExpenseView { transaction in
-                    transactions.append(transaction)
+                    saveTransaction(transaction)
                 }
+            }
+            .alert(
+                "Unable to Save Expense",
+                isPresented: $showingSaveError
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Your expense could not be saved. Please try again.")
             }
         }
         .tint(WalletTheme.gold)
     }
 
+    // MARK: - Header
+
     private var header: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("WALLET")
-                    .font(.system(
-                        size: 13,
-                        weight: .bold,
-                        design: .rounded
-                    ))
+                    .font(
+                        .system(
+                            size: 13,
+                            weight: .bold,
+                            design: .rounded
+                        )
+                    )
                     .tracking(3)
                     .foregroundStyle(WalletTheme.gold)
 
@@ -83,6 +105,8 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Spending Summary
+
     private var summaryCard: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack {
@@ -96,16 +120,23 @@ struct HomeView: View {
                 Spacer()
 
                 Text("CAD")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(
+                        .system(
+                            size: 12,
+                            weight: .semibold
+                        )
+                    )
                     .foregroundStyle(WalletTheme.gold)
             }
 
             Text(formattedTotal)
-                .font(.system(
-                    size: 37,
-                    weight: .bold,
-                    design: .rounded
-                ))
+                .font(
+                    .system(
+                        size: 37,
+                        weight: .bold,
+                        design: .rounded
+                    )
+                )
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.65)
@@ -128,12 +159,19 @@ struct HomeView: View {
             .font(.system(size: 13))
         }
         .padding(24)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(
+            maxWidth: .infinity,
+            alignment: .leading
+        )
         .background(
             LinearGradient(
                 colors: [
                     WalletTheme.navy,
-                    Color(red: 0.14, green: 0.22, blue: 0.33)
+                    Color(
+                        red: 0.14,
+                        green: 0.22,
+                        blue: 0.33
+                    )
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -142,11 +180,18 @@ struct HomeView: View {
         )
     }
 
+    // MARK: - Transaction History
+
     private var transactionsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Text("Recent Activity")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(
+                        .system(
+                            size: 20,
+                            weight: .bold
+                        )
+                    )
                     .foregroundStyle(
                         WalletTheme.primaryText(colorScheme)
                     )
@@ -164,13 +209,17 @@ struct HomeView: View {
                 emptyState
             } else {
                 LazyVStack(spacing: 10) {
-                    ForEach(sortedTransactions) { transaction in
-                        TransactionRow(transaction: transaction)
+                    ForEach(transactions) { transaction in
+                        TransactionRow(
+                            transaction: transaction
+                        )
                     }
                 }
             }
         }
     }
+
+    // MARK: - Empty State
 
     private var emptyState: some View {
         VStack(spacing: 12) {
@@ -200,28 +249,70 @@ struct HomeView: View {
         )
     }
 
+    // MARK: - Add Expense Button
+
     private var addExpenseButton: some View {
         Button {
             showingAddExpense = true
         } label: {
-            Label("Add Expense", systemImage: "plus")
-                .font(.system(size: 16, weight: .semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 17)
-                .foregroundStyle(WalletTheme.navy)
-                .background(
-                    WalletTheme.gold,
-                    in: RoundedRectangle(cornerRadius: 17)
+            Label(
+                "Add Expense",
+                systemImage: "plus"
+            )
+            .font(
+                .system(
+                    size: 16,
+                    weight: .semibold
                 )
+            )
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 17)
+            .foregroundStyle(WalletTheme.navy)
+            .background(
+                WalletTheme.gold,
+                in: RoundedRectangle(cornerRadius: 17)
+            )
         }
         .accessibilityIdentifier("addExpenseButton")
-        .padding(.horizontal, WalletTheme.horizontalPadding)
+        .padding(
+            .horizontal,
+            WalletTheme.horizontalPadding
+        )
         .padding(.top, 12)
         .padding(.bottom, 8)
-        .background(WalletTheme.background(colorScheme))
+        .background(
+            WalletTheme.background(colorScheme)
+        )
+    }
+
+    // MARK: - SwiftData Persistence
+
+    private func saveTransaction(
+        _ transaction: Transaction
+    ) {
+        let storedTransaction = StoredTransaction(
+            transaction: transaction
+        )
+
+        modelContext.insert(storedTransaction)
+
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            showingSaveError = true
+
+            print(
+                "Failed to save transaction: \(error)"
+            )
+        }
     }
 }
 
 #Preview {
     HomeView()
+        .modelContainer(
+            for: StoredTransaction.self,
+            inMemory: true
+        )
 }

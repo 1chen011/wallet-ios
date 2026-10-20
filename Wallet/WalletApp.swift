@@ -1,11 +1,6 @@
-//
-//  WalletApp.swift
-//  Wallet
-//
-//  Created by Yinlee57 on 2026/10/11.
-//
 
 import SwiftUI
+import SwiftData
 
 @main
 struct WalletApp: App {
@@ -13,5 +8,6 @@ struct WalletApp: App {
         WindowGroup {
             HomeView()
         }
+        .modelContainer(for: StoredTransaction.self)
     }
 }
