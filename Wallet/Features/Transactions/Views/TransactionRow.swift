@@ -1,25 +1,24 @@
 
 import SwiftUI
+import SwiftData
 
 struct TransactionRow: View {
     @Environment(\.colorScheme) private var colorScheme
 
     let transaction: Transaction
 
+    @Query private var categories: [StoredCategory]
+
+    private var category: StoredCategory? {
+        categories.first { $0.id == transaction.categoryId }
+    }
+
     private var categoryName: String {
-        ExpenseCategory.name(for: transaction.categoryId)
+        category?.name ?? ExpenseCategory.category(for: transaction.categoryId)?.name ?? "Uncategorized"
     }
 
     private var categoryIcon: String {
-        switch transaction.categoryId {
-        case "food": return "fork.knife"
-        case "transportation": return "car.fill"
-        case "shopping": return "bag.fill"
-        case "entertainment": return "ticket.fill"
-        case "housing": return "house.fill"
-        case "bills": return "doc.text.fill"
-        default: return "square.grid.2x2.fill"
-        }
+        category?.iconName ?? ExpenseCategory.category(for: transaction.categoryId)?.iconName ?? "tag.fill"
     }
 
     var body: some View {

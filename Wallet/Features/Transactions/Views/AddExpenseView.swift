@@ -1,9 +1,12 @@
 
 import SwiftUI
+import SwiftData
 
 struct AddExpenseView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+
+    @Query(sort: \StoredCategory.sortOrder) private var categories: [StoredCategory]
 
     let onSave: (Transaction) -> Void
 
@@ -67,8 +70,10 @@ struct AddExpenseView: View {
         return total
     }
 
+    private var activeCategories: [StoredCategory] { categories.filter { !$0.isArchived } }
+    private var quickCategories: [StoredCategory] { Array(activeCategories.prefix(4)) }
     private var canSave: Bool {
-        parsedAmount != nil && selectedCategoryId != nil
+        parsedAmount != nil && activeCategories.contains { $0.id == selectedCategoryId }
     }
 
     var body: some View {
@@ -188,19 +193,15 @@ struct AddExpenseView: View {
                 spacing: 10
             ) {
                 ForEach(
-                    ExpenseCategory.quickCategories
+                    quickCategories
                 ) { category in
                     categoryButton(category)
                 }
             }
 
             if let selectedCategoryId,
-               let selected = ExpenseCategory.category(
-                    for: selectedCategoryId
-               ),
-               !ExpenseCategory.quickCategoryIds.contains(
-                    selectedCategoryId
-               ) {
+               let selected = categories.first(where: { $0.id == selectedCategoryId }),
+               !quickCategories.contains(where: { $0.id == selectedCategoryId }) {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(WalletTheme.navy)
@@ -223,7 +224,7 @@ struct AddExpenseView: View {
     }
 
     private func categoryButton(
-        _ category: ExpenseCategory
+        _ category: StoredCategory
     ) -> some View {
         let isSelected = selectedCategoryId == category.id
 
@@ -352,4 +353,5 @@ struct AddExpenseView: View {
 
 #Preview {
     AddExpenseView(onSave: { _ in })
+        .modelContainer(for: [StoredCategory.self, StoredTransaction.self], inMemory: true)
 }
