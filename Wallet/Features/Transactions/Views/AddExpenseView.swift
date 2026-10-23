@@ -8,7 +8,13 @@ struct AddExpenseView: View {
 
     @Query(sort: \StoredCategory.sortOrder) private var categories: [StoredCategory]
 
+    let transactionToEdit: Transaction?
     let onSave: (Transaction) -> Void
+
+    init(transactionToEdit: Transaction? = nil, onSave: @escaping (Transaction) -> Void) {
+        self.transactionToEdit = transactionToEdit
+        self.onSave = onSave
+    }
 
     @State private var amount = ""
     @State private var selectedCategoryId: String? = nil
@@ -73,7 +79,8 @@ struct AddExpenseView: View {
     private var activeCategories: [StoredCategory] { categories.filter { !$0.isArchived } }
     private var quickCategories: [StoredCategory] { Array(activeCategories.prefix(4)) }
     private var canSave: Bool {
-        parsedAmount != nil && activeCategories.contains { $0.id == selectedCategoryId }
+        parsedAmount != nil && (activeCategories.contains { $0.id == selectedCategoryId }
+            || (transactionToEdit != nil && selectedCategoryId == transactionToEdit?.categoryId))
     }
 
     var body: some View {
@@ -90,7 +97,7 @@ struct AddExpenseView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .background(WalletTheme.background(colorScheme))
-            .navigationTitle("Add Expense")
+            .navigationTitle(transactionToEdit == nil ? "Add Expense" : "Edit Expense")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -112,6 +119,12 @@ struct AddExpenseView: View {
             }
         }
         .tint(WalletTheme.navy)
+        .onAppear {
+            guard let transactionToEdit else { return }
+            amount = NSDecimalNumber(decimal: Decimal(transactionToEdit.amountInMinorUnits) / 100).stringValue
+            selectedCategoryId = transactionToEdit.categoryId
+            selectedDate = transactionToEdit.date
+        }
     }
 
     // MARK: - Amount
@@ -305,7 +318,7 @@ struct AddExpenseView: View {
         Button {
             saveExpense()
         } label: {
-            Text("Save Expense")
+            Text(transactionToEdit == nil ? "Save Expense" : "Save Changes")
                 .font(.system(size: 16, weight: .semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 17)
@@ -341,7 +354,10 @@ struct AddExpenseView: View {
         }
 
         let transaction = Transaction(
+            id: transactionToEdit?.id ?? UUID(),
+            type: transactionToEdit?.type ?? .expense,
             amountInMinorUnits: amountInMinorUnits,
+            currencyCode: transactionToEdit?.currencyCode ?? "CAD",
             categoryId: categoryId,
             date: selectedDate
         )

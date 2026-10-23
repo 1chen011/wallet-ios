@@ -9,6 +9,7 @@ struct HomeView: View {
     @Query(sort: \StoredTransaction.date, order: .reverse)
     private var storedTransactions: [StoredTransaction]
 
+    @State private var selectedTransaction: StoredTransaction?
     @State private var showingAddExpense = false
     @State private var showingCategoryManagement = false
     @State private var showingSaveError = false
@@ -52,6 +53,9 @@ struct HomeView: View {
                 addExpenseButton
             }
             .toolbar(.hidden, for: .navigationBar)
+            .sheet(item: $selectedTransaction) { stored in
+                TransactionDetailView(storedTransaction: stored)
+            }
             .sheet(isPresented: $showingCategoryManagement) {
                 NavigationStack { CategoryManagementView() }
             }
@@ -215,10 +219,14 @@ struct HomeView: View {
                 emptyState
             } else {
                 LazyVStack(spacing: 10) {
-                    ForEach(transactions) { transaction in
-                        TransactionRow(
-                            transaction: transaction
-                        )
+                    ForEach(storedTransactions) { stored in
+                        Button {
+                            selectedTransaction = stored
+                        } label: {
+                            TransactionRow(transaction: stored.transaction)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("transactionRow_\(stored.id)")
                     }
                 }
             }
