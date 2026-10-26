@@ -7,12 +7,15 @@ struct AddExpenseView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     @Query(sort: \StoredCategory.sortOrder) private var categories: [StoredCategory]
+    @Query(sort: \StoredTransaction.date, order: .reverse) private var previousTransactions: [StoredTransaction]
 
     let transactionToEdit: Transaction?
+    let initialDate: Date
     let onSave: (Transaction) -> Void
 
-    init(transactionToEdit: Transaction? = nil, onSave: @escaping (Transaction) -> Void) {
+    init(transactionToEdit: Transaction? = nil, initialDate: Date = .now, onSave: @escaping (Transaction) -> Void) {
         self.transactionToEdit = transactionToEdit
+        self.initialDate = initialDate
         self.onSave = onSave
     }
 
@@ -20,6 +23,9 @@ struct AddExpenseView: View {
     @State private var selectedCategoryId: String? = nil
     @State private var selectedDate = Date()
     @State private var showingAllCategories = false
+    @State private var merchant = ""
+    @State private var expenseDescription = ""
+    @State private var showingDescription = false
 
     private var parsedAmount: Int64? {
         let normalized = amount
@@ -77,7 +83,57 @@ struct AddExpenseView: View {
     }
 
     private var activeCategories: [StoredCategory] { categories.filter { !$0.isArchived } }
-    private var quickCategories: [StoredCategory] { Array(activeCategories.prefix(4)) }
+    private var quickCategories: [StoredCategory] {
+        // Most recently used distinct categories first; no new category is required.
+        var seen = Set<String>()
+        let recentIds = previousTransactions.compactMap { transaction -> String? in
+            guard activeCategories.contains(where: { $0.id == transaction.categoryId }),
+                  seen.insert(transaction.categoryId).inserted else { return nil }
+            return transaction.categoryId
+        }
+        let ids = recentIds + activeCategories.map(\.id).filter { !seen.contains($0) }
+        return Array(ids.prefix(4)).compactMap { id in activeCategories.first { $0.id == id } }
+    }
+
+    private var merchantSuggestions: [String] {
+        let query = merchant.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return [] }
+        var seen = Set<String>()
+        return Array(previousTransactions.compactMap { stored -> String? in
+            guard let value = stored.merchant?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !value.isEmpty, value.localizedStandardContains(query) else { return nil }
+            let key = value.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+            return seen.insert(key).inserted ? value : nil
+        }.prefix(4))
+    }
+
+    private var normalizedMerchant: String? {
+        let value = merchant.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return nil }
+        // Reuse the original display spelling, regardless of input capitalization.
+        return previousTransactions.compactMap(\.merchant).first {
+            $0.compare(value, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+        } ?? value
+    }
+    private var suggestedCategory: StoredCategory? {
+        let input = merchant.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !input.isEmpty else { return nil }
+
+        let matchedTransaction = previousTransactions.first { transaction in
+            guard let recordedMerchant = transaction.merchant?.trimmingCharacters(in: .whitespacesAndNewlines) else {
+                return false
+            }
+            return recordedMerchant.compare(
+                input,
+                options: [.caseInsensitive, .diacriticInsensitive],
+                locale: .current
+            ) == .orderedSame && activeCategories.contains { $0.id == transaction.categoryId }
+        }
+
+        guard let matchedTransaction else { return nil }
+        return activeCategories.first { $0.id == matchedTransaction.categoryId }
+    }
+
     private var canSave: Bool {
         parsedAmount != nil && (activeCategories.contains { $0.id == selectedCategoryId }
             || (transactionToEdit != nil && selectedCategoryId == transactionToEdit?.categoryId))
@@ -88,8 +144,10 @@ struct AddExpenseView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     amountSection
+                    merchantSection
                     categorySection
                     dateSection
+                    descriptionSection
                 }
                 .padding(.horizontal, WalletTheme.horizontalPadding)
                 .padding(.top, 28)
@@ -120,10 +178,14 @@ struct AddExpenseView: View {
         }
         .tint(WalletTheme.navy)
         .onAppear {
+            selectedDate = initialDate
             guard let transactionToEdit else { return }
             amount = NSDecimalNumber(decimal: Decimal(transactionToEdit.amountInMinorUnits) / 100).stringValue
             selectedCategoryId = transactionToEdit.categoryId
             selectedDate = transactionToEdit.date
+            merchant = transactionToEdit.merchant ?? ""
+            expenseDescription = transactionToEdit.expenseDescription ?? ""
+            showingDescription = !expenseDescription.isEmpty
         }
     }
 
@@ -196,6 +258,40 @@ struct AddExpenseView: View {
                     .foregroundStyle(WalletTheme.navy)
                 }
                 .accessibilityIdentifier("searchAllCategories")
+            }
+
+            if let suggestedCategory,
+               selectedCategoryId != suggestedCategory.id {
+                Button {
+                    selectedCategoryId = suggestedCategory.id
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(WalletTheme.gold)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Suggested from your previous purchases")
+                                .font(.caption)
+                                .foregroundStyle(WalletTheme.secondaryText(colorScheme))
+                            Text(suggestedCategory.name)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(WalletTheme.primaryText(colorScheme))
+                        }
+                        Spacer()
+                        Text("Use")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(WalletTheme.navy)
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(WalletTheme.navy)
+                    }
+                    .padding(13)
+                    .background(
+                        WalletTheme.gold.opacity(0.12),
+                        in: RoundedRectangle(cornerRadius: 14)
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("useSuggestedCategory")
             }
 
             LazyVGrid(
@@ -286,6 +382,59 @@ struct AddExpenseView: View {
         )
     }
 
+    // MARK: - Merchant & optional description
+
+    private var merchantSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionTitle("MERCHANT · OPTIONAL")
+            VStack(alignment: .leading, spacing: 8) {
+                TextField("e.g. CoCo, Steam, Amazon", text: $merchant)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .accessibilityIdentifier("merchantField")
+                ForEach(merchantSuggestions, id: \.self) { suggestion in
+                    Button {
+                        merchant = suggestion
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.turn.down.right")
+                            Text(suggestion)
+                            Spacer()
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(WalletTheme.primaryText(colorScheme))
+                        .padding(.vertical, 6)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(18)
+            .background(WalletTheme.surface(colorScheme), in: RoundedRectangle(cornerRadius: WalletTheme.cornerRadius))
+        }
+    }
+
+    private var descriptionSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                withAnimation { showingDescription.toggle() }
+            } label: {
+                HStack {
+                    sectionTitle("DESCRIPTION · OPTIONAL")
+                    Spacer()
+                    Image(systemName: showingDescription ? "chevron.up" : "chevron.down")
+                }
+            }
+            .buttonStyle(.plain)
+            if showingDescription {
+                TextField("What was this for?", text: $expenseDescription, axis: .vertical)
+                    .lineLimit(2...4)
+                    .padding(18)
+                    .background(WalletTheme.surface(colorScheme), in: RoundedRectangle(cornerRadius: WalletTheme.cornerRadius))
+                    .accessibilityIdentifier("expenseDescriptionField")
+            }
+        }
+    }
+
     // MARK: - Date
 
     private var dateSection: some View {
@@ -359,7 +508,9 @@ struct AddExpenseView: View {
             amountInMinorUnits: amountInMinorUnits,
             currencyCode: transactionToEdit?.currencyCode ?? "CAD",
             categoryId: categoryId,
-            date: selectedDate
+            date: selectedDate,
+            merchant: normalizedMerchant,
+            expenseDescription: expenseDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : expenseDescription.trimmingCharacters(in: .whitespacesAndNewlines)
         )
 
         onSave(transaction)

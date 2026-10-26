@@ -11,6 +11,7 @@ struct HomeView: View {
 
     @State private var selectedTransaction: StoredTransaction?
     @State private var showingAddExpense = false
+    @State private var showingCalendar = false
     @State private var showingCategoryManagement = false
     @State private var showingSaveError = false
 
@@ -55,6 +56,9 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar)
             .sheet(item: $selectedTransaction) { stored in
                 TransactionDetailView(storedTransaction: stored)
+            }
+            .navigationDestination(isPresented: $showingCalendar) {
+                TransactionCalendarView(onSave: saveTransaction)
             }
             .sheet(isPresented: $showingCategoryManagement) {
                 NavigationStack { CategoryManagementView() }
@@ -207,6 +211,14 @@ struct HomeView: View {
                     )
 
                 Spacer()
+
+                Button {
+                    showingCalendar = true
+                } label: {
+                    Label("Calendar", systemImage: "calendar")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .accessibilityIdentifier("calendarButton")
 
                 Text("\(transactions.count) entries")
                     .font(.caption)
