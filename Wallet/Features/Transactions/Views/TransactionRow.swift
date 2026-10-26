@@ -36,11 +36,17 @@ struct TransactionRow: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 5) {
-                Text(categoryName)
+                Text(transaction.merchant?.isEmpty == false ? (transaction.merchant ?? categoryName) : categoryName)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(
                         WalletTheme.primaryText(colorScheme)
                     )
+
+                if transaction.merchant?.isEmpty == false {
+                    Text(categoryName)
+                        .font(.caption)
+                        .foregroundStyle(WalletTheme.secondaryText(colorScheme))
+                }
 
                 Text(
                     transaction.date,

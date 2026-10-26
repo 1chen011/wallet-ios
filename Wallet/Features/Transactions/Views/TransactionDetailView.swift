@@ -40,6 +40,14 @@ struct TransactionDetailView: View {
                         Divider()
                         detailRow("Date", value: storedTransaction.date.formatted(date: .abbreviated, time: .omitted))
                         Divider()
+                        if let merchant = storedTransaction.merchant, !merchant.isEmpty {
+                            detailRow("Merchant", value: merchant)
+                            Divider()
+                        }
+                        if let description = storedTransaction.expenseDescription, !description.isEmpty {
+                            detailRow("Description", value: description)
+                            Divider()
+                        }
                         detailRow("Currency", value: storedTransaction.currencyCode)
                     }
                     .padding(20)
@@ -113,6 +121,8 @@ struct TransactionDetailView: View {
         storedTransaction.amountInMinorUnits = updated.amountInMinorUnits
         storedTransaction.categoryId = updated.categoryId
         storedTransaction.date = updated.date
+        storedTransaction.merchant = updated.merchant
+        storedTransaction.expenseDescription = updated.expenseDescription
         do {
             try modelContext.save()
         } catch {

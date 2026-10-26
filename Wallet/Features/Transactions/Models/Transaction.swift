@@ -15,6 +15,8 @@ struct Transaction: Identifiable, Codable, Equatable {
     let currencyCode: String
     let categoryId: String
     let date: Date
+    let merchant: String?
+    let expenseDescription: String?
 
     init(
         id: UUID = UUID(),
@@ -22,7 +24,9 @@ struct Transaction: Identifiable, Codable, Equatable {
         amountInMinorUnits: Int64,
         currencyCode: String = "CAD",
         categoryId: String,
-        date: Date = .now
+        date: Date = .now,
+        merchant: String? = nil,
+        expenseDescription: String? = nil
     ) {
         self.id = id
         self.type = type
@@ -30,6 +34,8 @@ struct Transaction: Identifiable, Codable, Equatable {
         self.currencyCode = currencyCode
         self.categoryId = categoryId
         self.date = date
+        self.merchant = merchant
+        self.expenseDescription = expenseDescription
     }
 
     var formattedAmount: String {

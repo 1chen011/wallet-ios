@@ -11,6 +11,8 @@ final class StoredTransaction {
     var currencyCode: String
     var categoryId: String
     var date: Date
+    var merchant: String? = nil
+    var expenseDescription: String? = nil
 
     init(transaction: Transaction) {
         self.id = transaction.id
@@ -19,6 +21,8 @@ final class StoredTransaction {
         self.currencyCode = transaction.currencyCode
         self.categoryId = transaction.categoryId
         self.date = transaction.date
+        self.merchant = transaction.merchant
+        self.expenseDescription = transaction.expenseDescription
     }
 
     var transaction: Transaction {
@@ -28,7 +32,9 @@ final class StoredTransaction {
             amountInMinorUnits: amountInMinorUnits,
             currencyCode: currencyCode,
             categoryId: categoryId,
-            date: date
+            date: date,
+            merchant: merchant,
+            expenseDescription: expenseDescription
         )
     }
 }
