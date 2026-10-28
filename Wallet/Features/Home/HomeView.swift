@@ -12,6 +12,7 @@ struct HomeView: View {
     @State private var selectedTransaction: StoredTransaction?
     @State private var showingAddExpense = false
     @State private var showingCalendar = false
+    @State private var showingCaptureInbox = false
     @State private var showingCategoryManagement = false
     @State private var showingSaveError = false
 
@@ -56,6 +57,9 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar)
             .sheet(item: $selectedTransaction) { stored in
                 TransactionDetailView(storedTransaction: stored)
+            }
+            .navigationDestination(isPresented: $showingCaptureInbox) {
+                CaptureInboxView()
             }
             .navigationDestination(isPresented: $showingCalendar) {
                 TransactionCalendarView(onSave: saveTransaction)
@@ -104,6 +108,16 @@ struct HomeView: View {
             }
 
             Spacer()
+
+            Button { showingCaptureInbox = true } label: {
+                Image(systemName: "tray.full.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(WalletTheme.gold)
+                    .frame(width: 48, height: 48)
+                    .background(WalletTheme.navy, in: RoundedRectangle(cornerRadius: 16))
+            }
+            .accessibilityLabel("Capture Inbox")
+            .accessibilityIdentifier("captureInboxButton")
 
             Button { showingCategoryManagement = true } label: {
                 Image(systemName: "square.grid.2x2.fill")
