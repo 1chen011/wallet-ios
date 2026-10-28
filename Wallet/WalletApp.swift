@@ -5,7 +5,7 @@ import SwiftData
 struct WalletApp: App {
     var body: some Scene {
         WindowGroup { WalletLaunchView() }
-            .modelContainer(for: [StoredTransaction.self, StoredCategory.self])
+            .modelContainer(for: [StoredTransaction.self, StoredCategory.self, StoredDraft.self])
     }
 }
 
