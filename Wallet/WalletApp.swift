@@ -5,7 +5,7 @@ import SwiftData
 struct WalletApp: App {
     var body: some Scene {
         WindowGroup { WalletLaunchView() }
-            .modelContainer(for: [StoredTransaction.self, StoredCategory.self, StoredDraft.self])
+            .modelContainer(for: [StoredTransaction.self, StoredCategory.self, StoredDraft.self, StoredRefund.self])
     }
 }
 
@@ -16,7 +16,7 @@ private struct WalletLaunchView: View {
 
     var body: some View {
         Group {
-            if ready { HomeView() }
+            if ready { WalletRootView() }
             else if let startupError {
                 ContentUnavailableView("Unable to Load Categories", systemImage: "exclamationmark.triangle", description: Text(startupError))
             } else { ProgressView("Preparing Wallet…") }

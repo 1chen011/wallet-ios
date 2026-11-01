@@ -13,6 +13,12 @@ final class StoredTransaction {
     var date: Date
     var merchant: String? = nil
     var expenseDescription: String? = nil
+    var paymentStatusRawValue: String = "completed"
+
+    var paymentStatus: PaymentStatus {
+        get { PaymentStatus(rawValue: paymentStatusRawValue) ?? .completed }
+        set { paymentStatusRawValue = newValue.rawValue }
+    }
 
     init(transaction: Transaction) {
         self.id = transaction.id
@@ -23,6 +29,7 @@ final class StoredTransaction {
         self.date = transaction.date
         self.merchant = transaction.merchant
         self.expenseDescription = transaction.expenseDescription
+        self.paymentStatusRawValue = transaction.paymentStatus.rawValue
     }
 
     var transaction: Transaction {
@@ -34,7 +41,8 @@ final class StoredTransaction {
             categoryId: categoryId,
             date: date,
             merchant: merchant,
-            expenseDescription: expenseDescription
+            expenseDescription: expenseDescription,
+            paymentStatus: paymentStatus
         )
     }
 }

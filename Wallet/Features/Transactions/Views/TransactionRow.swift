@@ -48,6 +48,12 @@ struct TransactionRow: View {
                         .foregroundStyle(WalletTheme.secondaryText(colorScheme))
                 }
 
+                if transaction.paymentStatus != .completed {
+                    Text(transaction.paymentStatus.title)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(transaction.paymentStatus == .pending ? WalletTheme.gold : .secondary)
+                }
+
                 Text(
                     transaction.date,
                     format: .dateTime
