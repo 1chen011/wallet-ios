@@ -1,358 +1,139 @@
-
 import SwiftUI
 import SwiftData
 
 struct HomeView: View {
+    let onAdd: () -> Void
+    let onActivity: () -> Void
+    let onInbox: () -> Void
+
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.modelContext) private var modelContext
-
-    @Query(sort: \StoredTransaction.date, order: .reverse)
-    private var storedTransactions: [StoredTransaction]
-
+    @Query(sort: \StoredTransaction.date, order: .reverse) private var transactions: [StoredTransaction]
+    @Query private var refunds: [StoredRefund]
+    @Query private var drafts: [StoredDraft]
     @State private var selectedTransaction: StoredTransaction?
-    @State private var showingAddExpense = false
-    @State private var showingCalendar = false
-    @State private var showingCaptureInbox = false
-    @State private var showingCategoryManagement = false
-    @State private var showingSaveError = false
+    @State private var showingCategories = false
 
-    private var transactions: [Transaction] {
-        storedTransactions.map { $0.transaction }
+    private var thisMonth: [StoredTransaction] {
+        transactions.filter { Calendar.current.isDate($0.date, equalTo: Date(), toGranularity: .month) && Calendar.current.isDate($0.date, equalTo: Date(), toGranularity: .year) }
     }
-
-    private var totalSpent: Int64 {
-        transactions
-            .filter { $0.type == .expense }
-            .reduce(Int64(0)) {
-                $0 + $1.amountInMinorUnits
-            }
+    private var confirmed: Int64 {
+        thisMonth.filter { $0.typeRawValue == "expense" && $0.paymentStatus == .completed }
+            .reduce(Int64(0)) { $0 + $1.amountInMinorUnits }
     }
-
-    private var formattedTotal: String {
-        (Decimal(totalSpent) / 100)
-            .formatted(.currency(code: "CAD"))
+    private var refunded: Int64 {
+        let ids = Set(thisMonth.filter { $0.paymentStatus == .completed }.map(\.id))
+        return refunds.filter { ids.contains($0.transactionId) }.reduce(Int64(0)) { $0 + $1.amountInMinorUnits }
+    }
+    private var pending: Int64 {
+        thisMonth.filter { $0.typeRawValue == "expense" && $0.paymentStatus == .pending }
+            .reduce(Int64(0)) { $0 + $1.amountInMinorUnits }
+    }
+    private func amount(_ value: Int64) -> String {
+        (Decimal(value) / 100).formatted(.currency(code: "CAD"))
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    header
-                    summaryCard
-                    transactionsSection
+        ScrollView {
+            VStack(alignment: .leading, spacing: 25) {
+                HStack {
+                    Text("Overview")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(WalletTheme.primaryText(colorScheme))
+                    Spacer()
+                    Button { showingCategories = true } label: {
+                        Label("Manage", systemImage: "slider.horizontal.3")
+                            .font(.subheadline.weight(.medium))
+                    }
+                    .accessibilityLabel("Manage categories")
                 }
-                .padding(
-                    .horizontal,
-                    WalletTheme.horizontalPadding
-                )
-                .padding(.top, 28)
-                .padding(.bottom, 30)
-            }
-            .background(
-                WalletTheme.background(colorScheme)
-            )
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                addExpenseButton
-            }
-            .toolbar(.hidden, for: .navigationBar)
-            .sheet(item: $selectedTransaction) { stored in
-                TransactionDetailView(storedTransaction: stored)
-            }
-            .navigationDestination(isPresented: $showingCaptureInbox) {
-                CaptureInboxView()
-            }
-            .navigationDestination(isPresented: $showingCalendar) {
-                TransactionCalendarView(onSave: saveTransaction)
-            }
-            .sheet(isPresented: $showingCategoryManagement) {
-                NavigationStack { CategoryManagementView() }
-            }
-            .sheet(isPresented: $showingAddExpense) {
-                AddExpenseView { transaction in
-                    saveTransaction(transaction)
+
+                summary
+
+                if !drafts.isEmpty {
+                    Button(action: onInbox) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "tray.full")
+                                .foregroundStyle(WalletTheme.gold)
+                            Text("\(drafts.count) saved for later")
+                                .foregroundStyle(WalletTheme.primaryText(colorScheme))
+                            Spacer()
+                            Text("Review").font(.subheadline.weight(.semibold))
+                            Image(systemName: "chevron.right")
+                        }
+                        .padding(16)
+                        .background(WalletTheme.surface(colorScheme), in: RoundedRectangle(cornerRadius: 16))
+                    }
+                    .buttonStyle(.plain)
                 }
-            }
-            .alert(
-                "Unable to Save Expense",
-                isPresented: $showingSaveError
-            ) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("Your expense could not be saved. Please try again.")
-            }
-        }
-        .tint(WalletTheme.gold)
-    }
 
-    // MARK: - Header
-
-    private var header: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("WALLET")
-                    .font(
-                        .system(
-                            size: 13,
-                            weight: .bold,
-                            design: .rounded
-                        )
-                    )
-                    .tracking(3)
-                    .foregroundStyle(WalletTheme.gold)
-
-                Text("Your money, your rhythm.")
-                    .font(.system(size: 23, weight: .bold))
-                    .foregroundStyle(
-                        WalletTheme.primaryText(colorScheme)
-                    )
-            }
-
-            Spacer()
-
-            Button { showingCaptureInbox = true } label: {
-                Image(systemName: "tray.full.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(WalletTheme.gold)
-                    .frame(width: 48, height: 48)
-                    .background(WalletTheme.navy, in: RoundedRectangle(cornerRadius: 16))
-            }
-            .accessibilityLabel("Capture Inbox")
-            .accessibilityIdentifier("captureInboxButton")
-
-            Button { showingCategoryManagement = true } label: {
-                Image(systemName: "square.grid.2x2.fill")
-                .font(.system(size: 20))
-                .foregroundStyle(WalletTheme.gold)
-                .frame(width: 48, height: 48)
-                .background(
-                    WalletTheme.navy,
-                    in: RoundedRectangle(cornerRadius: 16)
-                )
-                .accessibilityLabel("Manage Categories")
-            }
-        }
-    }
-
-    // MARK: - Spending Summary
-
-    private var summaryCard: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack {
-                Label(
-                    "Recorded spending",
-                    systemImage: "chart.bar.fill"
-                )
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.75))
-
-                Spacer()
-
-                Text("CAD")
-                    .font(
-                        .system(
-                            size: 12,
-                            weight: .semibold
-                        )
-                    )
-                    .foregroundStyle(WalletTheme.gold)
-            }
-
-            Text(formattedTotal)
-                .font(
-                    .system(
-                        size: 37,
-                        weight: .bold,
-                        design: .rounded
-                    )
-                )
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.65)
-                .contentTransition(.numericText())
-
-            Rectangle()
-                .fill(.white.opacity(0.15))
-                .frame(height: 1)
-
-            HStack {
-                Text("Transactions recorded")
-                    .foregroundStyle(.white.opacity(0.7))
-
-                Spacer()
-
-                Text("\(transactions.count)")
-                    .foregroundStyle(WalletTheme.gold)
-                    .fontWeight(.bold)
-            }
-            .font(.system(size: 13))
-        }
-        .padding(24)
-        .frame(
-            maxWidth: .infinity,
-            alignment: .leading
-        )
-        .background(
-            LinearGradient(
-                colors: [
-                    WalletTheme.navy,
-                    Color(
-                        red: 0.14,
-                        green: 0.22,
-                        blue: 0.33
-                    )
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ),
-            in: RoundedRectangle(cornerRadius: 26)
-        )
-    }
-
-    // MARK: - Transaction History
-
-    private var transactionsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("Recent Activity")
-                    .font(
-                        .system(
-                            size: 20,
-                            weight: .bold
-                        )
-                    )
-                    .foregroundStyle(
-                        WalletTheme.primaryText(colorScheme)
-                    )
-
-                Spacer()
-
-                Button {
-                    showingCalendar = true
-                } label: {
-                    Label("Calendar", systemImage: "calendar")
+                HStack {
+                    Text("Recent transactions")
+                        .font(.title3.bold())
+                    Spacer()
+                    Button("See all", action: onActivity)
                         .font(.subheadline.weight(.semibold))
                 }
-                .accessibilityIdentifier("calendarButton")
+                .foregroundStyle(WalletTheme.primaryText(colorScheme))
 
-                Text("\(transactions.count) entries")
-                    .font(.caption)
-                    .foregroundStyle(
-                        WalletTheme.secondaryText(colorScheme)
-                    )
-            }
-
-            if transactions.isEmpty {
-                emptyState
-            } else {
-                LazyVStack(spacing: 10) {
-                    ForEach(storedTransactions) { stored in
-                        Button {
-                            selectedTransaction = stored
-                        } label: {
-                            TransactionRow(transaction: stored.transaction)
+                if transactions.isEmpty {
+                    ContentUnavailableView("No expenses yet", systemImage: "creditcard", description: Text("Add your first expense to get started."))
+                } else {
+                    LazyVStack(spacing: 10) {
+                        ForEach(transactions.prefix(3)) { stored in
+                            Button { selectedTransaction = stored } label: {
+                                TransactionRow(transaction: stored.transaction)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("transactionRow_\(stored.id)")
                     }
                 }
             }
+            .padding(.horizontal, WalletTheme.horizontalPadding)
+            .padding(.top, 24)
+            .padding(.bottom, 24)
+        }
+        .background(WalletTheme.background(colorScheme))
+        .safeAreaInset(edge: .bottom) {
+            Button(action: onAdd) {
+                Label("Add Expense", systemImage: "plus")
+                    .font(.headline)
+                    .foregroundStyle(WalletTheme.navy)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 15)
+                    .background(WalletTheme.gold, in: RoundedRectangle(cornerRadius: 16))
+            }
+            .padding(.horizontal, WalletTheme.horizontalPadding)
+            .padding(.vertical, 9)
+            .background(WalletTheme.background(colorScheme))
+        }
+        .navigationBarHidden(true)
+        .sheet(item: $selectedTransaction) { TransactionDetailView(storedTransaction: $0) }
+        .sheet(isPresented: $showingCategories) {
+            NavigationStack { CategoryManagementView() }
         }
     }
 
-    // MARK: - Empty State
-
-    private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "tray")
-                .font(.system(size: 31))
-                .foregroundStyle(WalletTheme.gold)
-
-            Text("No expenses yet")
-                .font(.headline)
-                .foregroundStyle(
-                    WalletTheme.primaryText(colorScheme)
-                )
-
-            Text("Your spending story starts here.")
+    private var summary: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Spent this month")
                 .font(.subheadline)
-                .foregroundStyle(
-                    WalletTheme.secondaryText(colorScheme)
-                )
+                .foregroundStyle(.white.opacity(0.78))
+            Text(amount(confirmed - refunded + pending))
+                .font(.system(size: 36, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            if pending > 0 {
+                Label("Includes \(amount(pending)) awaiting final amount", systemImage: "clock")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+            Text(Date.now.formatted(.dateTime.month(.wide).year()))
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.white.opacity(0.7))
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 48)
-        .background(
-            WalletTheme.surface(colorScheme),
-            in: RoundedRectangle(
-                cornerRadius: WalletTheme.cornerRadius
-            )
-        )
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(24)
+        .background(WalletTheme.navy, in: RoundedRectangle(cornerRadius: 24))
     }
-
-    // MARK: - Add Expense Button
-
-    private var addExpenseButton: some View {
-        Button {
-            showingAddExpense = true
-        } label: {
-            Label(
-                "Add Expense",
-                systemImage: "plus"
-            )
-            .font(
-                .system(
-                    size: 16,
-                    weight: .semibold
-                )
-            )
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 17)
-            .foregroundStyle(WalletTheme.navy)
-            .background(
-                WalletTheme.gold,
-                in: RoundedRectangle(cornerRadius: 17)
-            )
-        }
-        .accessibilityIdentifier("addExpenseButton")
-        .padding(
-            .horizontal,
-            WalletTheme.horizontalPadding
-        )
-        .padding(.top, 12)
-        .padding(.bottom, 8)
-        .background(
-            WalletTheme.background(colorScheme)
-        )
-    }
-
-    // MARK: - SwiftData Persistence
-
-    private func saveTransaction(
-        _ transaction: Transaction
-    ) {
-        let storedTransaction = StoredTransaction(
-            transaction: transaction
-        )
-
-        modelContext.insert(storedTransaction)
-
-        do {
-            try modelContext.save()
-        } catch {
-            modelContext.rollback()
-            showingSaveError = true
-
-            print(
-                "Failed to save transaction: \(error)"
-            )
-        }
-    }
-}
-
-#Preview {
-    HomeView()
-        .modelContainer(
-            for: [StoredTransaction.self, StoredCategory.self],
-            inMemory: true
-        )
 }

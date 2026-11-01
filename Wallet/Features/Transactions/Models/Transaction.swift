@@ -8,6 +8,12 @@ enum TransactionType: String, Codable, CaseIterable {
     case reimbursement
 }
 
+enum PaymentStatus: String, Codable, CaseIterable, Identifiable {
+    case pending, completed, cancelled
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+}
+
 struct Transaction: Identifiable, Codable, Equatable {
     let id: UUID
     let type: TransactionType
@@ -17,6 +23,7 @@ struct Transaction: Identifiable, Codable, Equatable {
     let date: Date
     let merchant: String?
     let expenseDescription: String?
+    let paymentStatus: PaymentStatus
 
     init(
         id: UUID = UUID(),
@@ -26,7 +33,8 @@ struct Transaction: Identifiable, Codable, Equatable {
         categoryId: String,
         date: Date = .now,
         merchant: String? = nil,
-        expenseDescription: String? = nil
+        expenseDescription: String? = nil,
+        paymentStatus: PaymentStatus = .completed
     ) {
         self.id = id
         self.type = type
@@ -36,6 +44,7 @@ struct Transaction: Identifiable, Codable, Equatable {
         self.date = date
         self.merchant = merchant
         self.expenseDescription = expenseDescription
+        self.paymentStatus = paymentStatus
     }
 
     var formattedAmount: String {

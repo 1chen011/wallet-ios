@@ -26,6 +26,7 @@ struct AddExpenseView: View {
     @State private var merchant = ""
     @State private var expenseDescription = ""
     @State private var showingDescription = false
+    @State private var paymentStatus: PaymentStatus = .completed
 
     private var parsedAmount: Int64? {
         let normalized = amount
@@ -147,6 +148,7 @@ struct AddExpenseView: View {
                     merchantSection
                     categorySection
                     dateSection
+                    paymentStatusSection
                     descriptionSection
                 }
                 .padding(.horizontal, WalletTheme.horizontalPadding)
@@ -186,6 +188,7 @@ struct AddExpenseView: View {
             merchant = transactionToEdit.merchant ?? ""
             expenseDescription = transactionToEdit.expenseDescription ?? ""
             showingDescription = !expenseDescription.isEmpty
+            paymentStatus = transactionToEdit.paymentStatus
         }
     }
 
@@ -461,6 +464,25 @@ struct AddExpenseView: View {
         }
     }
 
+    // MARK: - Payment status
+
+    private var paymentStatusSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionTitle("PAYMENT STATUS")
+            Picker("Payment Status", selection: $paymentStatus) {
+                ForEach(PaymentStatus.allCases) { status in
+                    Text(status.title).tag(status)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(14)
+            .background(WalletTheme.surface(colorScheme), in: RoundedRectangle(cornerRadius: WalletTheme.cornerRadius))
+            Text("Pending counts toward estimated spending. Completed counts toward confirmed spending.")
+                .font(.caption)
+                .foregroundStyle(WalletTheme.secondaryText(colorScheme))
+        }
+    }
+
     // MARK: - Save
 
     private var saveButton: some View {
@@ -510,7 +532,8 @@ struct AddExpenseView: View {
             categoryId: categoryId,
             date: selectedDate,
             merchant: normalizedMerchant,
-            expenseDescription: expenseDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : expenseDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+            expenseDescription: expenseDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : expenseDescription.trimmingCharacters(in: .whitespacesAndNewlines),
+            paymentStatus: paymentStatus
         )
 
         onSave(transaction)
