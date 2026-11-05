@@ -1,14 +1,19 @@
 import SwiftUI
 import SwiftData
 
+// The root navigator stays in the main Wallet app target.
 enum WalletTab: Hashable {
     case home, activity, inbox, insights
 }
 
 struct WalletRootView: View {
+    let initialQuickAddRequest: Bool
+
     @State private var selection: WalletTab = .home
     @State private var showingAddExpense = false
+    @State private var isQuickAdd = false
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @State private var saveError = false
 
     var body: some View {
@@ -38,14 +43,39 @@ struct WalletRootView: View {
                 .tag(WalletTab.insights)
         }
         .tint(WalletTheme.gold)
-        .sheet(isPresented: $showingAddExpense) {
-            AddExpenseView(onSave: saveTransaction)
+        .sheet(isPresented: $showingAddExpense, onDismiss: { isQuickAdd = false }) {
+            AddExpenseView(focusAmountOnAppear: isQuickAdd, onSave: saveTransaction)
+        }
+        .onAppear {
+            if initialQuickAddRequest { openQuickAdd() }
+            consumeQuickAddRequest()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .walletQuickAddRequested)) { _ in
+            openQuickAdd()
+        }
+        .onChange(of: initialQuickAddRequest) { _, requested in
+            if requested { openQuickAdd() }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { consumeQuickAddRequest() }
         }
         .alert("Unable to Save Expense", isPresented: $saveError) {
             Button("OK", role: .cancel) { }
         } message: {
             Text("Please try again. The expense was not saved.")
         }
+    }
+
+    private func consumeQuickAddRequest() {
+        guard UserDefaults.standard.bool(forKey: QuickAddLaunchIntent.requestKey) else { return }
+        UserDefaults.standard.removeObject(forKey: QuickAddLaunchIntent.requestKey)
+        openQuickAdd()
+    }
+
+    private func openQuickAdd() {
+        selection = .home
+        isQuickAdd = true
+        showingAddExpense = true
     }
 
     private func saveTransaction(_ transaction: Transaction) {
