@@ -8,6 +8,7 @@ struct CaptureInboxView: View {
     private var drafts: [StoredDraft]
 
     @State private var showingQuickCapture = false
+    @State private var showingSmartCapture = false
     @State private var selectedDraft: StoredDraft?
     @State private var draftToDelete: StoredDraft?
     @State private var errorMessage: String?
@@ -19,6 +20,14 @@ struct CaptureInboxView: View {
                     .font(.subheadline)
                     .foregroundStyle(WalletTheme.secondaryText(colorScheme))
                     .listRowBackground(WalletTheme.surface(colorScheme))
+            }
+
+            Section {
+                Button { showingSmartCapture = true } label: {
+                    Label("Import Payment Screenshot", systemImage: "text.viewfinder")
+                        .font(.headline)
+                }
+                .accessibilityIdentifier("importPaymentScreenshot")
             }
 
             if drafts.isEmpty {
@@ -75,6 +84,9 @@ struct CaptureInboxView: View {
                 }
                 .accessibilityIdentifier("quickCaptureButton")
             }
+        }
+        .sheet(isPresented: $showingSmartCapture) {
+            SmartCaptureView()
         }
         .sheet(isPresented: $showingQuickCapture) {
             QuickCaptureView()
