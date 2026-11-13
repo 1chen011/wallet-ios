@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		E30693D8307C95BF0052890A /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = E30693D7307C95BF0052890A /* README.md */; };
+		E306988B309C31300052890A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E306988A309C312F0052890A /* WidgetKit.framework */; };
+		E306988D309C31300052890A /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E306988C309C31300052890A /* SwiftUI.framework */; };
+		E306989A309C31300052890A /* WalletQuickAddControlExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E3069888309C312F0052890A /* WalletQuickAddControlExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -25,18 +28,62 @@
 			remoteGlobalIDString = E30693A8307C8D800052890A;
 			remoteInfo = Wallet;
 		};
+		E3069898309C31300052890A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E30693A1307C8D800052890A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E3069887309C312F0052890A;
+			remoteInfo = WalletQuickAddControlExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E306989B309C31300052890A /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E306989A309C31300052890A /* WalletQuickAddControlExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		E30693A9307C8D800052890A /* Wallet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Wallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E30693B6307C8D810052890A /* WalletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WalletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E30693C0307C8D810052890A /* WalletUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WalletUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E30693D7307C95BF0052890A /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		E3069888309C312F0052890A /* WalletQuickAddControlExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WalletQuickAddControlExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E306988A309C312F0052890A /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		E306988C309C31300052890A /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E306989E309C31300052890A /* Exceptions for "WalletQuickAddControl" folder in "WalletQuickAddControlExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E3069887309C312F0052890A /* WalletQuickAddControlExtension */;
+		};
+		E30698A5309C33040052890A /* Exceptions for "Wallet" folder in "WalletQuickAddControlExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Features/QuickAdd/QuickAddLaunchIntent.swift,
+			);
+			target = E3069887309C312F0052890A /* WalletQuickAddControlExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E30693AB307C8D800052890A /* Wallet */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E30698A5309C33040052890A /* Exceptions for "Wallet" folder in "WalletQuickAddControlExtension" target */,
+			);
 			path = Wallet;
 			sourceTree = "<group>";
 		};
@@ -48,6 +95,14 @@
 		E30693C3307C8D810052890A /* WalletUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = WalletUITests;
+			sourceTree = "<group>";
+		};
+		E306988E309C31300052890A /* WalletQuickAddControl */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E306989E309C31300052890A /* Exceptions for "WalletQuickAddControl" folder in "WalletQuickAddControlExtension" target */,
+			);
+			path = WalletQuickAddControl;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -74,6 +129,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E3069885309C312F0052890A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E306988D309C31300052890A /* SwiftUI.framework in Frameworks */,
+				E306988B309C31300052890A /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -83,6 +147,8 @@
 				E30693AB307C8D800052890A /* Wallet */,
 				E30693B9307C8D810052890A /* WalletTests */,
 				E30693C3307C8D810052890A /* WalletUITests */,
+				E306988E309C31300052890A /* WalletQuickAddControl */,
+				E3069889309C312F0052890A /* Frameworks */,
 				E30693AA307C8D800052890A /* Products */,
 				E30693D7307C95BF0052890A /* README.md */,
 			);
@@ -94,8 +160,18 @@
 				E30693A9307C8D800052890A /* Wallet.app */,
 				E30693B6307C8D810052890A /* WalletTests.xctest */,
 				E30693C0307C8D810052890A /* WalletUITests.xctest */,
+				E3069888309C312F0052890A /* WalletQuickAddControlExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		E3069889309C312F0052890A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				E306988A309C312F0052890A /* WidgetKit.framework */,
+				E306988C309C31300052890A /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -108,10 +184,12 @@
 				E30693A5307C8D800052890A /* Sources */,
 				E30693A6307C8D800052890A /* Frameworks */,
 				E30693A7307C8D800052890A /* Resources */,
+				E306989B309C31300052890A /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E3069899309C31300052890A /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				E30693AB307C8D800052890A /* Wallet */,
@@ -169,6 +247,28 @@
 			productReference = E30693C0307C8D810052890A /* WalletUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		E3069887309C312F0052890A /* WalletQuickAddControlExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E306989F309C31300052890A /* Build configuration list for PBXNativeTarget "WalletQuickAddControlExtension" */;
+			buildPhases = (
+				E3069884309C312F0052890A /* Sources */,
+				E3069885309C312F0052890A /* Frameworks */,
+				E3069886309C312F0052890A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E306988E309C31300052890A /* WalletQuickAddControl */,
+			);
+			name = WalletQuickAddControlExtension;
+			packageProductDependencies = (
+			);
+			productName = WalletQuickAddControlExtension;
+			productReference = E3069888309C312F0052890A /* WalletQuickAddControlExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -190,6 +290,9 @@
 						CreatedOnToolsVersion = 26.5;
 						TestTargetID = E30693A8307C8D800052890A;
 					};
+					E3069887309C312F0052890A = {
+						CreatedOnToolsVersion = 26.5;
+					};
 				};
 			};
 			buildConfigurationList = E30693A4307C8D800052890A /* Build configuration list for PBXProject "Wallet" */;
@@ -209,6 +312,7 @@
 				E30693A8307C8D800052890A /* Wallet */,
 				E30693B5307C8D810052890A /* WalletTests */,
 				E30693BF307C8D810052890A /* WalletUITests */,
+				E3069887309C312F0052890A /* WalletQuickAddControlExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -230,6 +334,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E30693BE307C8D810052890A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E3069886309C312F0052890A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -260,6 +371,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E3069884309C312F0052890A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -272,6 +390,11 @@
 			isa = PBXTargetDependency;
 			target = E30693A8307C8D800052890A /* Wallet */;
 			targetProxy = E30693C1307C8D810052890A /* PBXContainerItemProxy */;
+		};
+		E3069899309C31300052890A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E3069887309C312F0052890A /* WalletQuickAddControlExtension */;
+			targetProxy = E3069898309C31300052890A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -539,6 +662,64 @@
 			};
 			name = Release;
 		};
+		E306989C309C31300052890A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WalletQuickAddControl/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = WalletQuickAddControl;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yichen.Wallet.WalletQuickAddControl;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E306989D309C31300052890A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WalletQuickAddControl/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = WalletQuickAddControl;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yichen.Wallet.WalletQuickAddControl;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -574,6 +755,15 @@
 			buildConfigurations = (
 				E30693D1307C8D810052890A /* Debug */,
 				E30693D2307C8D810052890A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E306989F309C31300052890A /* Build configuration list for PBXNativeTarget "WalletQuickAddControlExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E306989C309C31300052890A /* Debug */,
+				E306989D309C31300052890A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
